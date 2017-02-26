@@ -3,7 +3,6 @@ CLIからCAMPHOR-の予定をシュッと確認するツール
 
 # Todo
 
-- エラー処理
 - CIの導入
 
 # Install && Usage

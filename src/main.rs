@@ -10,10 +10,15 @@ use hyper::client::Client;
 use hyper::header::{Authorization, Basic};
 use hyper::net::HttpsConnector;
 
+fn get_ev(name: &str) -> String {
+    let err = "Error: Unable to get ".to_string() + name;
+    env::var(name).expect(&err)
+}
+
 fn get_sched() -> serde_json::Value {
-    let url = env::var("CAMPH_SCHED_URL").expect("Error");
-    let user = env::var("CAMPH_SCHED_USER").expect("Error");
-    let pass = env::var("CAMPH_SCHED_PASS").expect("Error");
+    let url = get_ev("CAMPH_SCHED_URL");
+    let user = get_ev("CAMPH_SCHED_USER");
+    let pass =  get_ev("CAMPH_SCHED_PASS");
 
     let ssl = hyper_rustls::TlsClient::new();
     let conn = HttpsConnector::new(ssl);
@@ -23,9 +28,10 @@ fn get_sched() -> serde_json::Value {
         username: user,
         password: Some(pass),
     });
-    let mut res = client.get(&url).header(auth).send().unwrap();
+    let mut res = client.get(&url).header(auth).send()
+                        .expect("Error: Unable to get schedule");
     let mut res_body = String::new();
-    res.read_to_string(&mut res_body);
+    res.read_to_string(&mut res_body).unwrap();
     serde_json::from_str(&res_body).unwrap()
 }
 
