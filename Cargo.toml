@@ -4,3 +4,7 @@ version = "0.1.0"
 authors = ["ishiy <y.ishihara.1993@gmail.com>"]
 
 [dependencies]
+chrono = "0.3"
+hyper = "0.10.4"
+hyper-rustls = "0.3.2"
+serde_json = "0.9.8"
