@@ -1,6 +1,13 @@
 # A CLI Tool to check CAMPHOR- schedule
 CLIからCAMPHOR-の予定をシュッと確認するツール
 
+# Todo
+
+- READMEの整備
+- リファクタリング
+- エラー処理
+- CIの導入
+
 # Install && Usage
 
 Todo
