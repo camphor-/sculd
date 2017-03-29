@@ -10,12 +10,44 @@ use hyper::client::Client;
 use hyper::header::{Authorization, Basic};
 use hyper::net::HttpsConnector;
 
+struct Event {
+    start : DateTime<Local>,
+    end : DateTime<Local>,
+    title : String,
+    url : String,
+}
+
+fn parse_event(v: &serde_json::Value) -> Event {
+    let s = v.get("start").unwrap().as_str().unwrap()
+             .parse::<DateTime<Local>>().unwrap();
+    let e = v.get("end").unwrap().as_str().unwrap()
+             .parse::<DateTime<Local>>().unwrap();
+    let t = v.get("title").unwrap().as_str().unwrap().to_string();
+    let u = v.get("url").unwrap().as_str().or(Some("None")).unwrap().to_string();
+
+    Event {
+        start: s,
+        end: e,
+        title: t,
+        url: u,
+    }
+}
+
+fn format_event(e: &Event) {
+    println!("{} {} - {} {} {}",
+             e.start.format("%F"),
+             e.start.format("%R"),
+             e.end.format("%R"),
+             e.title,
+             e.url);
+}
+
 fn get_ev(name: &str) -> String {
     let err = "Error: Unable to get ".to_string() + name;
     env::var(name).expect(&err)
 }
 
-fn get_sched() -> serde_json::Value {
+fn get_sched() -> Vec<Event> {
     let url = get_ev("CAMPH_SCHED_URL");
     let user = get_ev("CAMPH_SCHED_USER");
     let pass =  get_ev("CAMPH_SCHED_PASS");
@@ -32,30 +64,19 @@ fn get_sched() -> serde_json::Value {
                         .expect("Error: Unable to get schedule");
     let mut res_body = String::new();
     res.read_to_string(&mut res_body).unwrap();
-    serde_json::from_str(&res_body).unwrap()
+    let vs : serde_json::Value = serde_json::from_str(&res_body).unwrap();
+    vs.as_array().unwrap().iter().map(parse_event).collect()
 }
 
 fn main() {
-    let vs = get_sched();
+    let es = get_sched();
 
     let today = Local::today();
     let next = today + chrono::Duration::days(7);
 
-    for v in vs.as_array().unwrap() {
-        let s = v.get("start").unwrap().as_str().unwrap()
-                 .parse::<DateTime<Local>>().unwrap();
-        let e = v.get("end").unwrap().as_str().unwrap()
-                 .parse::<DateTime<Local>>().unwrap();
-        let t = v.get("title").unwrap().as_str().unwrap();
-        let u = v.get("url").unwrap().as_str().or(Some("None")).unwrap();
-
-        if s.date() >= today && e.date() < next {
-            println!("{} {} - {} {} {}",
-                     s.format("%F"),
-                     s.format("%R"),
-                     e.format("%R"),
-                     t,
-                     u);
-        }
+    let mut res : Vec<&Event> = es.iter().filter(|e| e.start.date() >= today && e.end.date() < next).collect();
+    &res.sort_by_key(|e| e.start);
+    for e in res {
+        format_event(&e);
     }
 }
