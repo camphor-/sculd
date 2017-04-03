@@ -5,7 +5,7 @@ CLIからCAMPHOR-の予定をシュッと確認するツール
 
 - CIの導入
 
-# Install && Usage
+# Install & Usage
 Set environment variables `CAMPH_SCHED_URL`, `CAMPH_SCHED_USER`, `CAMPH_SCHED_PASS`.
 
 Clone this repo and
