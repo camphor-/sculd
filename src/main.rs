@@ -48,9 +48,9 @@ fn get_ev(name: &str) -> String {
 }
 
 fn get_sched() -> Vec<Event> {
-    let url = get_ev("CAMPH_SCHED_URL");
-    let user = get_ev("CAMPH_SCHED_USER");
-    let pass =  get_ev("CAMPH_SCHED_PASS");
+    let url = get_ev("CAMPH_SCULD_URL");
+    let user = get_ev("CAMPH_SCULD_USER");
+    let pass =  get_ev("CAMPH_SCULD_PASS");
 
     let ssl = hyper_rustls::TlsClient::new();
     let conn = HttpsConnector::new(ssl);
