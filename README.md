@@ -28,6 +28,7 @@ $ curl https://sh.rustup.rs -sSf | sh
 ```
 
 See [more](https://www.rust-lang.org/en-US/install.html).
+We use latest stable toolchain.
 
 Clone this repo and
 
