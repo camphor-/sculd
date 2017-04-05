@@ -33,13 +33,13 @@ fn parse_event(v: &serde_json::Value) -> Event {
     }
 }
 
-fn format_event(e: &Event) {
-    println!("{} {} - {} {} {}",
+fn format_event(e: &Event) -> String {
+    format!("{} {} - {} {} {}",
              e.start.format("%F"),
              e.start.format("%R"),
              e.end.format("%R"),
              e.title,
-             e.url);
+             e.url)
 }
 
 fn get_ev(name: &str) -> String {
@@ -47,11 +47,7 @@ fn get_ev(name: &str) -> String {
     env::var(name).expect(&err)
 }
 
-fn get_sched() -> Vec<Event> {
-    let url = get_ev("CAMPH_SCHED_URL");
-    let user = get_ev("CAMPH_SCHED_USER");
-    let pass =  get_ev("CAMPH_SCHED_PASS");
-
+fn get_sched(url: String, user: String, pass: String) -> Vec<Event> {
     let ssl = hyper_rustls::TlsClient::new();
     let conn = HttpsConnector::new(ssl);
     let client = Client::with_connector(conn);
@@ -69,14 +65,19 @@ fn get_sched() -> Vec<Event> {
 }
 
 fn main() {
-    let es = get_sched();
+    let url = get_ev("CAMPH_SCHED_URL");
+    let user = get_ev("CAMPH_SCHED_USER");
+    let pass =  get_ev("CAMPH_SCHED_PASS");
+    let es = get_sched(url, user, pass);
 
     let today = Local::today();
     let next = today + chrono::Duration::days(7);
 
-    let mut res : Vec<&Event> = es.iter().filter(|e| e.start.date() >= today && e.end.date() < next).collect();
+    let mut res : Vec<&Event> = es.iter()
+        .filter(|e| e.start.date() >= today && e.end.date() < next)
+        .collect();
     &res.sort_by_key(|e| e.start);
     for e in res {
-        format_event(&e);
+        println!("{}", format_event(&e));
     }
 }
