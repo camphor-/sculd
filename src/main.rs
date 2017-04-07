@@ -4,6 +4,7 @@ extern crate hyper_rustls;
 extern crate serde_json;
 
 use std::env;
+use std::fmt;
 use std::io::Read;
 use chrono::prelude::{DateTime, Local};
 use hyper::client::Client;
@@ -15,6 +16,17 @@ struct Event {
     end : DateTime<Local>,
     title : String,
     url : String,
+}
+
+impl fmt::Display for Event {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {} - {} {} {}",
+               self.start.format("%F"),
+               self.start.format("%R"),
+               self.end.format("%R"),
+               self.title,
+               self.url)
+    }
 }
 
 fn parse_event(v: &serde_json::Value) -> Event {
@@ -31,15 +43,6 @@ fn parse_event(v: &serde_json::Value) -> Event {
         title: t,
         url: u,
     }
-}
-
-fn format_event(e: &Event) -> String {
-    format!("{} {} - {} {} {}",
-             e.start.format("%F"),
-             e.start.format("%R"),
-             e.end.format("%R"),
-             e.title,
-             e.url)
 }
 
 fn get_ev(name: &str) -> String {
@@ -78,6 +81,6 @@ fn main() {
         .collect();
     &res.sort_by_key(|e| e.start);
     for e in res {
-        println!("{}", format_event(&e));
+        println!("{}", e);
     }
 }
