@@ -15,7 +15,7 @@ struct Event {
     start : DateTime<Local>,
     end : DateTime<Local>,
     title : String,
-    url : String,
+    url : Option<String>,
 }
 
 impl fmt::Display for Event {
@@ -25,7 +25,7 @@ impl fmt::Display for Event {
                self.start.format("%R"),
                self.end.format("%R"),
                self.title,
-               self.url)
+               self.url.as_ref().unwrap_or(&("".to_string())))
     }
 }
 
@@ -35,7 +35,7 @@ fn parse_event(v: &serde_json::Value) -> Event {
     let e = v.get("end").unwrap().as_str().unwrap()
              .parse::<DateTime<Local>>().unwrap();
     let t = v.get("title").unwrap().as_str().unwrap().to_string();
-    let u = v.get("url").unwrap().as_str().or(Some("None")).unwrap().to_string();
+    let u = v.get("url").unwrap().as_str().map(|s| s.to_string());
 
     Event {
         start: s,
