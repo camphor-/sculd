@@ -1,11 +1,7 @@
-# A CLI Tool to check CAMPHOR- schedule
+# sculd
 CLIからCAMPHOR-の予定をシュッと確認するツール
 
-# Todo
-
-- CIの導入
-
-# Install & Usage
+## Install & Usage
 Set environment variables `CAMPH_SCHED_URL`, `CAMPH_SCHED_USER`, `CAMPH_SCHED_PASS`.
 
 Clone this repo and
@@ -20,7 +16,7 @@ Then,
 $ sculd
 ```
 
-# Development
+## Development
 Install Rust
 
 ```
@@ -28,7 +24,7 @@ $ curl https://sh.rustup.rs -sSf | sh
 ```
 
 See [more](https://www.rust-lang.org/en-US/install.html).
-We use latest stable toolchain.
+We use the latest stable toolchain.
 
 Clone this repo and
 
@@ -36,7 +32,7 @@ Clone this repo and
 $ cargo build
 ```
 
-# おまけ: sculdの由来
+## おまけ: sculdの由来
 > スクルド（古ノルド語: Skuld、またはSculd）は、北欧神話に登場する運命の女神、ノルンたち（ノルニル）の一柱で、三姉妹の三女。その名前は「税」「債務」「義務」または「未来」を意味する。
 
 Wikipediaより引用
