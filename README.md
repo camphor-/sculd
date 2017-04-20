@@ -1,4 +1,7 @@
 # sculd
+
+[![Build Status](https://travis-ci.org/camphor-/sculd.svg?branch=master)](https://travis-ci.org/camphor-/sculd)
+
 CLIからCAMPHOR-の予定をシュッと確認するツール
 
 ## Install & Usage
