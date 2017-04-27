@@ -12,6 +12,8 @@ use hyper::client::Client;
 use hyper::header::{Authorization, Basic};
 use hyper::net::HttpsConnector;
 
+type Auth = Authorization<Basic>;
+
 struct Event {
     start : DateTime<Local>,
     end : DateTime<Local>,
@@ -50,20 +52,22 @@ fn get_ev(name: &str) -> Option<String> {
     env::var(name).ok()
 }
 
-fn get_sched(url: String, user: Option<String>, pass: Option<String>) -> Result<Vec<Event>,String> {
+fn make_auth() -> Option<Auth> {
+    let user = get_ev("CAMPH_SCHED_USER");
+    let pass =  get_ev("CAMPH_SCHED_PASS");
+
+    user.map(|u| Authorization(Basic {
+        username: u,
+        password: pass,
+    }))
+}
+
+fn get_sched(url: String, auth: Option<Auth>) -> Result<Vec<Event>, String> {
     let ssl = hyper_rustls::TlsClient::new();
     let conn = HttpsConnector::new(ssl);
     let client = Client::with_connector(conn);
     let req0 = client.get(&url);
-
-    let req = match user {
-        Some(u) =>
-            req0.header(Authorization(Basic {
-                username: u,
-                password: pass,
-            })),
-        _ =>  req0,
-    };
+    let req = if let Some(a) = auth { req0.header(a) } else { req0 };
 
     let mut res = try!(req.send().map_err(|e| e.to_string()));
 
@@ -78,11 +82,10 @@ fn get_sched(url: String, user: Option<String>, pass: Option<String>) -> Result<
 }
 
 fn main() {
-    let url = get_ev("CAMPH_SCHED_URL").unwrap();
-    let user = get_ev("CAMPH_SCHED_USER");
-    let pass =  get_ev("CAMPH_SCHED_PASS");
+    let url = get_ev("CAMPH_SCHED_URL").expect("Unable to get CAMPH_SCHED_URL");
+    let auth = make_auth();
 
-    match get_sched(url, user, pass) {
+    match get_sched(url, auth) {
         Err(e) => {
             println!("Error: {}", e);
             process::exit(1);
