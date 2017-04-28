@@ -48,6 +48,11 @@ fn parse_event(v: &serde_json::Value) -> Event {
     }
 }
 
+fn die(err: String) {
+    println!("Error: {}", err);
+    process::exit(1);
+}
+
 fn get_ev(name: &str) -> Option<String> {
     env::var(name).ok()
 }
@@ -85,22 +90,16 @@ fn main() {
     let url = get_ev("CAMPH_SCHED_URL").expect("Unable to get CAMPH_SCHED_URL");
     let auth = make_auth();
 
-    match get_sched(url, auth) {
-        Err(e) => {
-            println!("Error: {}", e);
-            process::exit(1);
-        },
-        Ok(es) => {
-            let today = Local::today();
-            let next = today + chrono::Duration::days(7);
+    if let Ok(es) = get_sched(url, auth).map_err(die) {
+        let today = Local::today();
+        let next = today + chrono::Duration::days(7);
 
-            let mut res : Vec<&Event> = es.iter()
-                .filter(|e| e.start.date() >= today && e.end.date() < next)
-                .collect();
-            &res.sort_by_key(|e| e.start);
-            for e in res {
-                println!("{}", e);
-            }
-        },
+        let mut res : Vec<&Event> = es.iter()
+            .filter(|e| e.start.date() >= today && e.end.date() < next)
+            .collect();
+        &res.sort_by_key(|e| e.start);
+        for e in res {
+            println!("{}", e);
+        }
     }
 }
