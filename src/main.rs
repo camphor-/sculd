@@ -6,10 +6,13 @@ extern crate serde_json;
 use std::env;
 use std::fmt;
 use std::io::Read;
+use std::process;
 use chrono::prelude::{DateTime, Local};
 use hyper::client::Client;
 use hyper::header::{Authorization, Basic};
 use hyper::net::HttpsConnector;
+
+type Auth = Authorization<Basic>;
 
 struct Event {
     start : DateTime<Local>,
@@ -45,42 +48,58 @@ fn parse_event(v: &serde_json::Value) -> Event {
     }
 }
 
-fn get_ev(name: &str) -> String {
-    let err = "Error: Unable to get ".to_string() + name;
-    env::var(name).expect(&err)
+fn die(err: String) {
+    println!("Error: {}", err);
+    process::exit(1);
 }
 
-fn get_sched(url: String, user: String, pass: String) -> Vec<Event> {
+fn get_ev(name: &str) -> Option<String> {
+    env::var(name).ok()
+}
+
+fn make_auth() -> Option<Auth> {
+    let user = get_ev("CAMPH_SCHED_USER");
+    let pass =  get_ev("CAMPH_SCHED_PASS");
+
+    user.map(|u| Authorization(Basic {
+        username: u,
+        password: pass,
+    }))
+}
+
+fn get_sched(url: String, auth: Option<Auth>) -> Result<Vec<Event>, String> {
     let ssl = hyper_rustls::TlsClient::new();
     let conn = HttpsConnector::new(ssl);
     let client = Client::with_connector(conn);
+    let req0 = client.get(&url);
+    let req = if let Some(a) = auth { req0.header(a) } else { req0 };
 
-    let auth = Authorization(Basic {
-        username: user,
-        password: Some(pass),
-    });
-    let mut res = client.get(&url).header(auth).send()
-                        .expect("Error: Unable to get schedule");
-    let mut res_body = String::new();
-    res.read_to_string(&mut res_body).unwrap();
-    let vs : serde_json::Value = serde_json::from_str(&res_body).unwrap();
-    vs.as_array().unwrap().iter().map(parse_event).collect()
+    let mut res = try!(req.send().map_err(|e| e.to_string()));
+
+    if res.status.is_success() {
+        let mut res_body = String::new();
+        res.read_to_string(&mut res_body).unwrap();
+        let vs : serde_json::Value = serde_json::from_str(&res_body).unwrap();
+        Ok(vs.as_array().unwrap().iter().map(parse_event).collect())
+    } else {
+        Err(res.status.to_string())
+    }
 }
 
 fn main() {
-    let url = get_ev("CAMPH_SCHED_URL");
-    let user = get_ev("CAMPH_SCHED_USER");
-    let pass =  get_ev("CAMPH_SCHED_PASS");
-    let es = get_sched(url, user, pass);
+    let url = get_ev("CAMPH_SCHED_URL").expect("Unable to get CAMPH_SCHED_URL");
+    let auth = make_auth();
 
-    let today = Local::today();
-    let next = today + chrono::Duration::days(7);
+    if let Ok(es) = get_sched(url, auth).map_err(die) {
+        let today = Local::today();
+        let next = today + chrono::Duration::days(7);
 
-    let mut res : Vec<&Event> = es.iter()
-        .filter(|e| e.start.date() >= today && e.end.date() < next)
-        .collect();
-    &res.sort_by_key(|e| e.start);
-    for e in res {
-        println!("{}", e);
+        let mut res : Vec<&Event> = es.iter()
+            .filter(|e| e.start.date() >= today && e.end.date() < next)
+            .collect();
+        &res.sort_by_key(|e| e.start);
+        for e in res {
+            println!("{}", e);
+        }
     }
 }
