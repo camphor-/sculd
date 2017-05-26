@@ -1,11 +1,11 @@
 [package]
 name = "sculd"
 version = "0.1.0"
-authors = ["ishiy <y.ishihara.1993@gmail.com>"]
+authors = ["ishiy <y.ishihara.1993@gmail.com>", "Yusuke Miyazaki <miyazaki.dev@gmail.com>"]
 license = "MIT"
 
 [dependencies]
 chrono = "~0.3"
 hyper = "~0.10"
-hyper-rustls = "~0.3"
-serde_json = "~0.9"
+hyper-rustls = "~0.6"
+serde_json = "~1.0"
