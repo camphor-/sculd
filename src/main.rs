@@ -1,4 +1,5 @@
 extern crate chrono;
+extern crate getopts;
 extern crate hyper;
 extern crate hyper_rustls;
 extern crate serde_json;
@@ -8,6 +9,7 @@ use std::fmt;
 use std::io::Read;
 use std::process;
 use chrono::prelude::{DateTime, Local};
+use getopts::Options;
 use hyper::client::Client;
 use hyper::header::{Authorization, Basic};
 use hyper::net::HttpsConnector;
@@ -20,6 +22,8 @@ struct Event {
     title : String,
     url : Option<String>,
 }
+
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 impl fmt::Display for Event {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -86,7 +90,27 @@ fn get_sched(url: String, auth: Option<Auth>) -> Result<Vec<Event>, String> {
     }
 }
 
+fn print_version(program: &str) {
+    println!("{} v{}", program, VERSION);
+}
+
 fn main() {
+    let args: Vec<String> = env::args().map(|x| x.to_string())
+        .collect();
+    let ref program = args[0];
+
+    let mut opts = Options::new();
+    opts.optflag("v", "version", "Display version");
+
+    let matches = match opts.parse(&args[1..]) {
+        Ok(m) => { m }
+        Err(f) => { panic!(f.to_string()) }
+    };
+    if matches.opt_present("v") {
+        print_version(&program);
+        return;
+    }
+
     let url = get_ev("CAMPH_SCHED_URL").expect("Unable to get CAMPH_SCHED_URL");
     let auth = make_auth();
 
