@@ -95,17 +95,13 @@ fn print_version(program: &str) {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().map(|x| x.to_string())
-        .collect();
+    let args: Vec<String> = env::args().map(|x| x.to_string()).collect();
     let ref program = args[0];
 
     let mut opts = Options::new();
     opts.optflag("v", "version", "Display version");
 
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => { m }
-        Err(f) => { panic!(f.to_string()) }
-    };
+    let matches = opts.parse(&args[1..]).expect("Failed to parse opts");
     if matches.opt_present("v") {
         print_version(&program);
         return;

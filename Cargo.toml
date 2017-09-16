@@ -6,7 +6,7 @@ license = "MIT"
 
 [dependencies]
 chrono = "~0.3"
+getopts = "~0.2"
 hyper = "~0.10"
 hyper-rustls = "~0.6"
 serde_json = "~1.0"
-getopts = "~0.2"
