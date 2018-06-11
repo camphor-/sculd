@@ -100,6 +100,7 @@ fn main() {
 
     let mut opts = Options::new();
     opts.optflag("v", "version", "Display version");
+    opts.optopt("w", "weeks", "Get results up till number of weeks (Defaults to 1)", "number", );
 
     let matches = opts.parse(&args[1..]).expect("Failed to parse opts");
     if matches.opt_present("v") {
@@ -107,12 +108,27 @@ fn main() {
         return;
     }
 
+    let weeks = matches.opt_str("w").map(|w| {
+        w.parse::<i64>().unwrap_or_else(|_| {
+            die("argument to -w must be an integer".to_string());
+            0xdeadc0de
+        })
+    }).map(|w| {
+        if w <= 0 {
+            die("argument to -w must be an integer greater than 0".to_string())
+        }
+        w
+    });
+
     let url = get_ev("CAMPH_SCHED_URL").expect("Unable to get CAMPH_SCHED_URL");
     let auth = make_auth();
 
     if let Ok(es) = get_sched(url, auth).map_err(die) {
         let today = Local::today();
-        let next = today + chrono::Duration::days(7);
+        let next = match weeks {
+            Some(w) => today + chrono::Duration::days(7 * w),
+            None => today + chrono::Duration::days(7),
+        } ;
 
         let mut res : Vec<&Event> = es.iter()
             .filter(|e| e.start.date() >= today && e.end.date() < next)
