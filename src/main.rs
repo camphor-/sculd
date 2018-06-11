@@ -109,10 +109,13 @@ fn main() {
     }
 
     let weeks = matches.opt_str("w").map(|w| {
-        w.parse::<i64>().unwrap_or_else(|_| panic!("argument to -w must be an integer"))
+        w.parse::<i64>().unwrap_or_else(|_| {
+            die("argument to -w must be an integer".to_string());
+            0xdeadc0de
+        })
     }).map(|w| {
         if w <= 0 {
-            panic!("argument to -w must be an integer greater than 0")
+            die("argument to -w must be an integer greater than 0".to_string())
         }
         w
     });
