@@ -1,20 +1,18 @@
 extern crate chrono;
 extern crate getopts;
-extern crate hyper;
-extern crate hyper_rustls;
+extern crate reqwest;
 extern crate serde_json;
 
 use std::env;
 use std::fmt;
-use std::io::Read;
 use std::process;
 use chrono::prelude::{DateTime, Local};
 use getopts::Options;
-use hyper::client::Client;
-use hyper::header::{Authorization, Basic};
-use hyper::net::HttpsConnector;
 
-type Auth = Authorization<Basic>;
+struct Auth {
+    username: String,
+    password: String,
+}
 
 struct Event {
     start : DateTime<Local>,
@@ -62,32 +60,21 @@ fn get_ev(name: &str) -> Option<String> {
 }
 
 fn make_auth() -> Option<Auth> {
-    let user = get_ev("CAMPH_SCHED_USER");
-    let pass =  get_ev("CAMPH_SCHED_PASS");
+    let user = get_ev("CAMPH_SCHED_USER")?;
+    let pass =  get_ev("CAMPH_SCHED_PASS")?;
 
-    user.map(|u| Authorization(Basic {
-        username: u,
-        password: pass,
-    }))
+    Some(Auth { username: user, password: pass, })
 }
 
-fn get_sched(url: String, auth: Option<Auth>) -> Result<Vec<Event>, String> {
-    let ssl = hyper_rustls::TlsClient::new();
-    let conn = HttpsConnector::new(ssl);
-    let client = Client::with_connector(conn);
-    let req0 = client.get(&url);
-    let req = if let Some(a) = auth { req0.header(a) } else { req0 };
-
-    let mut res = try!(req.send().map_err(|e| e.to_string()));
-
-    if res.status.is_success() {
-        let mut res_body = String::new();
-        res.read_to_string(&mut res_body).unwrap();
-        let vs : serde_json::Value = serde_json::from_str(&res_body).unwrap();
-        Ok(vs.as_array().unwrap().iter().map(parse_event).collect())
-    } else {
-        Err(res.status.to_string())
-    }
+fn get_sched(url: &str, auth: Option<Auth>) -> Result<Vec<Event>, String> {
+    let client: reqwest::Client = reqwest::Client::new();
+    let mut body = match auth {
+        Some(a) => client.get(url).basic_auth(a.username, Some(a.password))
+            .send().map_err(|e| e.to_string())?,
+        None => client.get(url).send().map_err(|e| e.to_string())?,
+    };
+    let vs: serde_json::Value = body.json().map_err(|e| e.to_string())?;
+    Ok(vs.as_array().unwrap().iter().map(parse_event).collect())
 }
 
 fn print_version(program: &str) {
@@ -123,7 +110,7 @@ fn main() {
     let url = get_ev("CAMPH_SCHED_URL").expect("Unable to get CAMPH_SCHED_URL");
     let auth = make_auth();
 
-    if let Ok(es) = get_sched(url, auth).map_err(die) {
+    if let Ok(es) = get_sched(&url, auth).map_err(die) {
         let today = Local::today();
         let next = match weeks {
             Some(w) => today + chrono::Duration::days(7 * w),
